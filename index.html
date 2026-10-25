@@ -3,34 +3,134 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>197 Flags vs Endless Zombies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#101820">
+<title>197 Flags vs Endless Zombies - Multiplayer</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:Arial,sans-serif}
+html,body{
+ margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;
+ background:#101820;color:#fff;font-family:Arial,sans-serif;
+ overscroll-behavior:none;touch-action:pan-x pan-y;
+}
 body{display:flex;flex-direction:column;user-select:none;-webkit-user-select:none}
-#top{flex:0 0 auto;min-height:42px;padding:6px 10px;background:#172631;display:flex;align-items:center;justify-content:space-between;gap:8px}
+#top{
+ flex:0 0 auto;min-height:38px;padding:6px 10px;
+ padding-top:max(6px,env(safe-area-inset-top));
+ background:#172631;display:flex;align-items:center;
+ justify-content:space-between;gap:8px
+}
 #title{font-size:clamp(11px,2.5vw,17px);font-weight:900}
 #stats{font-size:clamp(9px,1.8vw,13px);text-align:right;color:#dcebf3}
-#arena{position:relative;flex:1;min-height:0;overflow:hidden;background:#172b3b}
-canvas{display:block;width:100%;height:100%;touch-action:pan-y}
-#notice{position:absolute;top:7px;left:50%;transform:translateX(-50%);z-index:2;background:#071019dd;padding:5px 9px;border-radius:7px;font-size:clamp(9px,2vw,12px);white-space:nowrap;pointer-events:none}
-#banner{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);z-index:2;text-align:center;font-size:clamp(24px,6vw,48px);font-weight:900;text-shadow:0 3px 8px #000;pointer-events:none;white-space:nowrap}
+#arena{position:relative;flex:1;min-height:0;overflow:hidden;background:#263f35;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#modeMenu{
+ position:absolute;inset:0;z-index:10;background:#071019ed;
+ display:flex;align-items:center;justify-content:center;
+ padding:max(10px,env(safe-area-inset-top)) 12px
+ max(10px,env(safe-area-inset-bottom));overflow:auto
+}
+#menuCard{
+ width:min(540px,100%);max-height:100%;overflow:auto;
+ -webkit-overflow-scrolling:touch;background:#172631;
+ border:1px solid #527084;border-radius:14px;padding:18px;
+ box-shadow:0 12px 40px #0009;text-align:center
+}
+#menuCard h2{margin:0 0 8px;font-size:clamp(20px,5vw,30px)}
+#menuCard p{font-size:13px;line-height:1.4;color:#d3e3ed}
+#menuCard select,#menuCard input{
+ width:100%;padding:12px;border-radius:7px;border:1px solid #587080;
+ background:#0c1820;color:#fff;font-size:16px;margin:5px 0 10px
+}
+.menuRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.menuRow button{flex:1;min-width:120px}
+#menuStatus{font-size:12px;color:#ffe99a;overflow-wrap:anywhere;margin-top:8px}
+#backMenu{background:#485661}
+#soloAI{background:#287344}
+#movePad{
+ display:none;position:absolute;left:max(14px,env(safe-area-inset-left));
+ bottom:max(16px,env(safe-area-inset-bottom));
+ width:clamp(105px,24vw,138px);height:clamp(105px,24vw,138px);
+ z-index:4;border-radius:50%;background:#dce8ef30;
+ border:2px solid #e9f4ff99;touch-action:none;user-select:none;
+ -webkit-user-select:none;overscroll-behavior:contain
+}
+#joyKnob{
+ position:absolute;left:50%;top:50%;
+ width:40%;height:40%;transform:translate(-50%,-50%);
+ border-radius:50%;background:#eaf5ffcc;border:2px solid #fff;
+ box-shadow:0 2px 9px #0008;pointer-events:none
+}
+#shootButton{
+ display:none;position:absolute;
+ right:max(14px,env(safe-area-inset-right));
+ bottom:max(20px,env(safe-area-inset-bottom));z-index:5;
+ width:clamp(92px,23vw,118px);height:clamp(70px,16vw,88px);
+ border-radius:20px;background:#bd302de8;border:3px solid #ffd9d9;
+ color:white;font-weight:900;font-size:15px;touch-action:none;
+ user-select:none;-webkit-user-select:none;overscroll-behavior:contain;
+ box-shadow:0 4px 12px #0006
+}
+#shootButton.shooting{background:#ff5a3d;transform:scale(.96)}
+#notice{
+ position:absolute;top:7px;left:50%;transform:translateX(-50%);
+ z-index:2;background:#071019dd;padding:5px 9px;border-radius:7px;
+ font-size:clamp(9px,2vw,12px);white-space:nowrap;pointer-events:none
+}
+#banner{
+ position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);
+ z-index:2;text-align:center;font-size:clamp(24px,6vw,48px);
+ font-weight:900;text-shadow:0 3px 8px #000;pointer-events:none;white-space:nowrap
+}
 #subbanner{font-size:clamp(11px,2.5vw,17px);color:#fff0a4;margin-top:6px}
-#bottom{flex:0 0 auto;background:#172631;display:flex;flex-direction:column;max-height:30%;min-height:94px}
-#controls{display:flex;justify-content:center;align-items:center;gap:6px;padding:7px 4px;flex-wrap:wrap}
-button{border:0;border-radius:7px;padding:9px 11px;background:#2b495a;color:white;font-weight:bold;font-size:clamp(10px,2vw,13px);min-height:35px;touch-action:manipulation}
-button:active{filter:brightness(1.35);transform:scale(.97)}
+#bottom{
+ flex:0 0 auto;background:#172631;display:flex;flex-direction:column;
+ max-height:30%;min-height:88px;
+ padding-bottom:env(safe-area-inset-bottom)
+}
+#controls{
+ display:flex;justify-content:center;align-items:center;gap:6px;
+ padding:7px 4px;flex-wrap:wrap
+}
+button{
+ border:0;border-radius:7px;padding:9px 11px;background:#2b495a;color:white;
+ font-weight:bold;font-size:clamp(10px,2vw,13px);min-height:35px;
+ touch-action:manipulation
+}
+button:active{filter:brightness(1.35)}
 #pause{background:#946b20}
 #deadTitle{font-size:11px;font-weight:bold;color:#ffb6b6;padding:2px 8px}
-#deadList{display:flex;flex-wrap:wrap;gap:4px;overflow:auto;padding:4px 7px 7px;min-height:0;font-size:10px}
+#deadList{
+ display:flex;flex-wrap:wrap;gap:4px;overflow:auto;padding:4px 7px 7px;
+ min-height:0;font-size:10px
+}
 .dead{display:flex;align-items:center;gap:4px;background:#39272a;border:1px solid #704046;border-radius:4px;padding:3px 5px}
 .dead img{width:17px;height:12px;object-fit:contain}
-@media(max-width:500px){
- #top{padding:5px 7px}
+@media(max-width:700px){
  #controls{gap:4px;padding:5px 3px}
- button{padding:8px 7px;min-height:34px}
- #bottom{max-height:34%;min-height:105px}
+ #controls button{padding:7px 8px;min-height:32px}
+ #bottom{min-height:62px;max-height:22%}
+ #deadTitle,#deadList{display:none}
+}
+@media(max-width:420px){
+ #top{padding-left:6px;padding-right:6px}
+ #controls{gap:3px}
+ #controls button{padding:7px 6px;font-size:10px}
+ #title{font-size:11px}
+ #stats{font-size:9px}
+}
+@media(orientation:landscape) and (max-height:500px){
+ #top{min-height:30px;padding-top:3px;padding-bottom:3px}
+ #bottom{min-height:43px;max-height:17%;padding-bottom:0}
+ #controls{padding:3px;gap:4px}
+ #controls button{min-height:29px;padding:5px 7px}
+ #movePad{width:92px;height:92px;bottom:8px}
+ #shootButton{width:94px;height:63px;bottom:12px}
+ #banner{top:38%}
+ #modeMenu{padding:5px}
+ #menuCard{padding:10px}
+ #menuCard p{margin:7px 0;font-size:12px}
 }
 </style>
 </head>
@@ -39,21 +139,55 @@ button:active{filter:brightness(1.35);transform:scale(.97)}
  <div id="title">🌍 FLAGS vs ZOMBIES</div>
  <div id="stats">Loading...</div>
 </div>
+
 <div id="arena">
  <canvas id="game"></canvas>
  <div id="notice">🛡️ PREPARATION PHASE</div>
  <div id="banner">GET READY!<div id="subbanner">Horde arrives in 10</div></div>
+
+ <div id="modeMenu">
+  <div id="menuCard">
+   <h2>🌍 FLAGS vs ZOMBIES</h2>
+   <p><b>Watch Mode</b> = automatic flag survival battle.<br>
+   <b>Play Mode</b> = control your own country and shoot zombies.<br>
+   Empty player slots are controlled by AI.</p>
+   <div id="mainMenu" class="menuRow">
+    <button id="watchMode">👁 Watch Mode</button>
+    <button id="playMode">🎮 Play Mode</button>
+   </div>
+   <div id="playSetup" style="display:none;text-align:left">
+    <label for="countryPick"><b>Choose your country</b></label>
+    <select id="countryPick"></select>
+    <div class="menuRow"><button id="soloAI">🤖 Play Solo vs AI</button></div>
+    <p>Play alone against AI, host an online room, or join a friend's room.</p>
+    <label for="roomInput"><b>Room ID (joining only)</b></label>
+    <input id="roomInput" placeholder="Paste the host's Room ID here" autocomplete="off">
+    <div class="menuRow">
+     <button id="hostRoom">🌐 Host Room</button>
+     <button id="joinRoom">🔗 Join Room</button>
+    </div>
+    <div class="menuRow"><button id="backMenu">← Back</button></div>
+   </div>
+   <div id="menuStatus">Choose a mode to begin.</div>
+  </div>
+ </div>
+
+ <div id="movePad" aria-label="Movement joystick"><div id="joyKnob"></div></div>
+ <button id="shootButton">🔫 HOLD TO SHOOT</button>
 </div>
+
 <div id="bottom">
  <div id="controls">
   <button id="restart">↻ Restart</button>
   <button id="pause">⏸ Pause</button>
   <button id="sound">🔊 Sound ON</button>
   <button id="fullscreen">⛶ Fullscreen</button>
+  <button id="menuButton">🏠 Modes</button>
  </div>
  <div id="deadTitle">☠ FALLEN FLAGS (0)</div>
  <div id="deadList">No flags have fallen yet!</div>
 </div>
+
 <script>
 "use strict";
 
@@ -106,59 +240,361 @@ const $=id=>document.getElementById(id);
 const arena=$("arena"),canvas=$("game"),ctx=canvas.getContext("2d",{alpha:false});
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const rand=(a,b)=>a+Math.random()*(b-a);
-const mobile=()=>matchMedia("(max-width:700px)").matches;
+
+/* Detect touchscreen devices even in landscape orientation. */
+const mobile=()=>matchMedia("(pointer: coarse)").matches||matchMedia("(max-width:700px)").matches;
 
 let W=1,H=1,dpr=1;
 let flags=[],zombies=[],bullets=[],flagImages={};
 let running=false,paused=false,started=false,muted=false,gameOver=false;
 let countdown=10,countClock=0,lastTime=0,spawnClock=0,waveClock=0;
 let wave=1,defeated=0,nextId=1,shotClock=0,statsClock=0;
-let audio=null,master=null,resizeObserver=null;
-let lastBannerTimer=0;
+let audio=null,master=null,resizeObserver=null,lastBannerTimer=0;
+let mode="watch",networkRole="offline",peer=null;
+let hostConnections=new Map(),playerControls={},localCountryCode=null;
+let localInput={x:0,y:0,shoot:false},localShoot=false;
+let snapshotClock=0,lastDeadCount=0,clientRoomId="";
+let shootPointer=null;
+const playerNames={};
+const keyDown=new Set();
+
+function setMenuStatus(t){$("menuStatus").textContent=t;}
+
+function setMobileControls(){
+ const show=mode==="play"&&mobile()&&$("modeMenu").style.display==="none";
+ $("movePad").style.display=show?"block":"none";
+ $("shootButton").style.display=show?"block":"none";
+}
+
+function showMenu(){
+ running=false;
+ cancelAnimationFrame(window.gameFrame);
+ $("modeMenu").style.display="flex";
+ $("mainMenu").style.display="flex";
+ $("playSetup").style.display="none";
+ setMobileControls();
+ setMenuStatus("Choose a mode to begin.");
+}
+
+function fillCountryPicker(){
+ const sel=$("countryPick");
+ sel.innerHTML="";
+ countries.forEach(c=>{
+  const o=document.createElement("option");
+  o.value=c[1];o.textContent=c[0];sel.appendChild(o);
+ });
+ sel.value="my";
+}
+
+function beginWatch(){
+ disconnectNetwork();
+ mode="watch";networkRole="offline";localCountryCode=null;
+ $("title").textContent="🌍 FLAGS vs ZOMBIES";
+ $("modeMenu").style.display="none";
+ setMobileControls();
+ reset();
+}
+
+function beginSoloAI(){
+ disconnectNetwork();
+ mode="play";networkRole="solo";
+ localCountryCode=$("countryPick").value;
+ playerControls={};
+ playerControls[localCountryCode]={x:0,y:0,shoot:false};
+ playerNames[localCountryCode]="YOU";
+ localInput={x:0,y:0,shoot:false};
+ localShoot=false;
+ $("title").textContent="🌍 FLAGS vs ZOMBIES · SOLO AI";
+ $("modeMenu").style.display="none";
+ setMobileControls();
+ setupAudio();
+ reset();
+ $("notice").textContent="🤖 SOLO MODE · AI FLAGS ACTIVE";
+}
+
+function disconnectNetwork(){
+ for(const pl of hostConnections.values()){
+  try{pl.conn.close();}catch(e){}
+ }
+ hostConnections.clear();
+ playerControls={};
+ if(window.clientConnection){
+  try{window.clientConnection.close();}catch(e){}
+  window.clientConnection=null;
+ }
+ if(peer){
+  try{peer.destroy();}catch(e){}
+  peer=null;
+ }
+ localInput={x:0,y:0,shoot:false};
+ localShoot=false;
+ shootPointer=null;
+ $("shootButton").classList.remove("shooting");
+}
+
+function networkError(msg){setMenuStatus("⚠️ "+msg);}
+
+function createPeer(){
+ if(typeof Peer==="undefined"){
+  networkError("PeerJS did not load. Check your internet connection and reload.");
+  return null;
+ }
+ disconnectNetwork();
+ try{peer=new Peer();}
+ catch(e){networkError("Could not start networking: "+e.message);return null;}
+ peer.on("error",e=>{
+  networkError((e&&e.type?e.type+": ":"")+(e&&e.message?e.message:"network error"));
+ });
+ return peer;
+}
+
+function hostGame(){
+ const p=createPeer();
+ if(!p)return;
+ mode="play";networkRole="host";localCountryCode=$("countryPick").value;
+ setMenuStatus("Connecting to the multiplayer service…");
+ p.on("open",id=>{
+  $("title").textContent="🌍 FLAGS vs ZOMBIES · ROOM "+id;
+  $("modeMenu").style.display="none";
+  setMobileControls();
+  setupAudio();
+  reset();
+  $("notice").textContent="ROOM ID: "+id+" · Share with friends";
+  playerControls[localCountryCode]={x:0,y:0,shoot:false};
+  playerNames[localCountryCode]="HOST";
+  setMenuStatus("Room created! Share this Room ID: "+id);
+ });
+
+ p.on("connection",conn=>{
+  conn.on("data",msg=>{
+   if(!msg||typeof msg!=="object")return;
+
+   if(msg.type==="join"){
+    let code=String(msg.country||"");
+    const taken=new Set([
+     localCountryCode,
+     ...Array.from(hostConnections.values()).map(v=>v.country)
+    ]);
+    if(!countries.some(c=>c[1]===code)||taken.has(code)){
+     code=(countries.find(c=>!taken.has(c[1]))||countries[0])[1];
+    }
+
+    hostConnections.set(conn.peer,{
+     conn,country:code,input:{x:0,y:0,shoot:false}
+    });
+    playerControls[code]={x:0,y:0,shoot:false};
+    playerNames[code]=String(msg.name||"Player").slice(0,20);
+
+    conn.send({type:"welcome",country:code,host:peer.id});
+    conn.send({type:"notice",text:"Connected! You are "+(countries.find(c=>c[1]===code)||[code])[0]+"."});
+    conn.send({type:"snapshot",data:makeSnapshot()});
+   }
+
+   if(msg.type==="input"){
+    const pl=hostConnections.get(conn.peer);
+    if(pl){
+     pl.input={
+      x:clamp(Number(msg.x)||0,-1,1),
+      y:clamp(Number(msg.y)||0,-1,1),
+      shoot:!!msg.shoot
+     };
+     playerControls[pl.country]=pl.input;
+    }
+   }
+  });
+
+  conn.on("close",()=>{
+   const pl=hostConnections.get(conn.peer);
+   if(pl){
+    delete playerControls[pl.country];
+    delete playerNames[pl.country];
+    hostConnections.delete(conn.peer);
+   }
+  });
+  conn.on("error",()=>{});
+ });
+}
+
+function joinGame(){
+ const room=$("roomInput").value.trim();
+ if(!room){networkError("Enter the host's Room ID first.");return;}
+
+ const p=createPeer();
+ if(!p)return;
+ mode="play";networkRole="client";clientRoomId=room;
+ localCountryCode=$("countryPick").value;
+ setMenuStatus("Connecting to room "+room+"…");
+
+ p.on("open",()=>{
+  const conn=p.connect(room,{reliable:true});
+  window.clientConnection=conn;
+
+  conn.on("open",()=>{
+   conn.send({type:"join",country:localCountryCode,name:"Player"});
+  });
+
+  conn.on("data",msg=>{
+   if(!msg||typeof msg!=="object")return;
+
+   if(msg.type==="welcome"){
+    localCountryCode=msg.country;
+    playerNames[localCountryCode]="YOU";
+    localInput={x:0,y:0,shoot:false};
+    localShoot=false;
+
+    $("title").textContent="🌍 FLAGS vs ZOMBIES · JOINED ROOM";
+    $("modeMenu").style.display="none";
+    setMobileControls();
+    setupAudio();
+
+    setMenuStatus("Joined! You are "+((countries.find(c=>c[1]===localCountryCode)||[localCountryCode])[0])+".");
+    running=true;paused=false;gameOver=false;
+    lastTime=performance.now();
+    cancelAnimationFrame(window.gameFrame);
+    window.gameFrame=requestAnimationFrame(tick);
+   }else if(msg.type==="snapshot"){
+    applySnapshot(msg.data);
+   }else if(msg.type==="notice"){
+    setMenuStatus(msg.text);
+   }
+  });
+
+  conn.on("close",()=>{
+   networkError("Disconnected from the host. The host may have closed the game.");
+   $("modeMenu").style.display="flex";
+   running=false;
+   setMobileControls();
+  });
+
+  conn.on("error",()=>{
+   networkError("Could not connect. Check the Room ID and try again.");
+  });
+ });
+}
+
+function makeSnapshot(){
+ return {
+  flags:flags.map(f=>({...f})),
+  zombies:zombies.map(z=>({...z})),
+  bullets:bullets.map(b=>({...b})),
+  started,paused,countdown,wave,defeated,gameOver,
+  notice:$("notice").textContent,
+  dead:flags.filter(f=>!f.alive).map(f=>({name:f.name,code:f.code}))
+ };
+}
+
+function sendToPlayers(data){
+ for(const pl of hostConnections.values()){
+  if(pl.conn.open){
+   try{pl.conn.send(data);}catch(e){}
+  }
+ }
+}
+
+function sendSnapshot(){
+ if(networkRole!=="host")return;
+ sendToPlayers({type:"snapshot",data:makeSnapshot()});
+}
+
+function applySnapshot(d){
+ if(!d)return;
+ flags=d.flags||[];
+ zombies=d.zombies||[];
+ bullets=d.bullets||[];
+ started=!!d.started;
+ paused=!!d.paused;
+ countdown=d.countdown||0;
+ wave=d.wave||1;
+ defeated=d.defeated||0;
+ gameOver=!!d.gameOver;
+ $("notice").textContent=d.notice||"Multiplayer";
+
+ $("stats").textContent=started
+  ?"Wave "+wave+" · 🧟 "+zombies.length+" active · ☠ "+defeated+" defeated · 🌍 "+flags.filter(f=>f.alive).length+" flags"
+  :"🌍 "+flags.filter(f=>f.alive).length+" flags preparing · "+countdown+"s";
+
+ const dead=d.dead||[];
+ if(dead.length!==lastDeadCount){
+  $("deadList").innerHTML="";
+  dead.forEach(f=>{
+   const item=document.createElement("span");item.className="dead";
+   const img=document.createElement("img");
+   img.src="https://flagcdn.com/w80/"+f.code+".png";img.alt="";
+   const name=document.createElement("span");name.textContent=f.name;
+   item.append(img,name);$("deadList").appendChild(item);
+  });
+  $("deadTitle").textContent="☠ FALLEN FLAGS ("+dead.length+")";
+  lastDeadCount=dead.length;
+ }
+}
+
+function updateLocalInput(){
+ localInput.shoot=!!localShoot||keyDown.has(" ");
+
+ if(networkRole==="client"&&window.clientConnection&&window.clientConnection.open){
+  try{
+   window.clientConnection.send({
+    type:"input",x:localInput.x,y:localInput.y,shoot:localInput.shoot
+   });
+  }catch(e){}
+ }
+
+ if((networkRole==="host"||networkRole==="solo")&&localCountryCode){
+  playerControls[localCountryCode]={
+   x:localInput.x,y:localInput.y,shoot:localInput.shoot
+  };
+ }
+}
 
 function resize(){
  const r=arena.getBoundingClientRect();
  W=Math.max(1,r.width);H=Math.max(1,r.height);
- // Avoid rendering at unnecessarily huge device-pixel ratios.
- dpr=Math.min(window.devicePixelRatio||1,mobile()?1.35:1.75);
- canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+ dpr=Math.min(window.devicePixelRatio||1,mobile()?1.25:1.75);
+ canvas.width=Math.round(W*dpr);
+ canvas.height=Math.round(H*dpr);
  canvas.style.width=W+"px";canvas.style.height=H+"px";
  ctx.setTransform(dpr,0,0,dpr,0,0);
  setTargets();
+ setMobileControls();
 }
 if("ResizeObserver" in window){
  resizeObserver=new ResizeObserver(resize);
  resizeObserver.observe(arena);
 }
 window.addEventListener("resize",resize);
+window.addEventListener("orientationchange",()=>setTimeout(resize,150));
 
 function setupAudio(){
  const AC=window.AudioContext||window.webkitAudioContext;
  if(!AC)return;
  if(!audio){
-  audio=new AC();master=audio.createGain();
+  audio=new AC();
+  master=audio.createGain();
   master.gain.value=mobile()?.65:.9;
   master.connect(audio.destination);
  }
  if(audio.state==="suspended")audio.resume().catch(()=>{});
 }
+
 function tone(freq,dur,vol,type="triangle",end=0){
  if(muted||!audio||!master)return;
  try{
   const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;
   o.type=type;o.frequency.setValueAtTime(freq,t);
   if(end)o.frequency.exponentialRampToValueAtTime(Math.max(1,end),t+dur);
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  g.gain.setValueAtTime(vol,t);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.01);
  }catch(e){}
 }
 
 function getBounds(){
- return {minX:4,maxX:Math.max(5,W-28),minY:18,maxY:Math.max(20,H*.64-20)};
+ return {minX:4,maxX:Math.max(5,W-28),minY:18,maxY:Math.max(20,H-28)};
 }
+
 function setTargets(){
- const b=getBounds(),left=W*.38,right=Math.max(left+10,W-30);
- const top=22,bottom=Math.max(top+10,H*.62-22);
+ const b=getBounds(),left=W*.38,right=Math.max(W*.38+10,W-30);
+ const top=22,bottom=Math.max(top+10,H-30);
  const cols=Math.max(1,Math.floor((right-left)/(mobile()?27:32)));
  const rows=Math.ceil(flags.length/cols);
  const cw=(right-left)/cols,ch=(bottom-top)/rows;
@@ -192,8 +628,7 @@ function makeZombie(x,y){
  const hp=48+Math.min(wave,40)*4;
  zombies.push({
   id:nextId++,x,y,hp,max:hp,
-  speed:rand(76,108)+Math.min(wave,45)*1.4,
-  alive:true
+  speed:rand(76,108)+Math.min(wave,45)*1.4,alive:true
  });
 }
 
@@ -208,6 +643,7 @@ function killFlag(f){
  $("deadTitle").textContent="☠ FALLEN FLAGS ("+$("deadList").children.length+")";
  tone(115,.16,.2,"sawtooth",45);
 }
+
 function killZombie(z){
  if(!z.alive)return;
  z.alive=false;defeated++;
@@ -219,6 +655,7 @@ function banner(title,subtitle=""){
  $("subbanner").textContent=subtitle;
  $("subbanner").style.display=subtitle?"block":"none";
 }
+
 function hideBannerSoon(ms){
  clearTimeout(lastBannerTimer);
  lastBannerTimer=setTimeout(()=>{
@@ -227,7 +664,13 @@ function hideBannerSoon(ms){
 }
 
 function reset(){
+ $("modeMenu").style.display="none";
+ setMobileControls();
  cancelAnimationFrame(window.gameFrame);
+
+ if(networkRole==="client")return;
+
+ snapshotClock=0;lastDeadCount=0;
  clearTimeout(lastBannerTimer);
  flags=[];zombies=[];bullets=[];
  nextId=1;defeated=0;wave=1;waveClock=0;spawnClock=0;
@@ -239,7 +682,13 @@ function reset(){
  $("notice").textContent="🛡️ PREPARATION PHASE";
  $("banner").style.display="block";
  banner("GET READY!","Horde arrives in 10");
- countries.forEach(makeFlag);setTargets();
+
+ countries.forEach(makeFlag);
+ setTargets();
+
+ if(mode==="play"&&localCountryCode){
+  playerControls[localCountryCode]={x:0,y:0,shoot:false};
+ }
  running=true;lastTime=performance.now();
  window.gameFrame=requestAnimationFrame(tick);
 }
@@ -250,15 +699,15 @@ function startBattle(){
  $("notice").textContent="⚔️ BATTLE IN PROGRESS";
  banner("NIGHTMARE MODE!","THE HORDE IS COMING!");
  tone(90,.5,.2,"sawtooth",42);
- for(let i=0;i<Math.min(40,maxZombies());i++)
-  makeZombie(-rand(0,100),rand(18,Math.max(30,H*.62-20)));
+ for(let i=0;i<Math.min(40,maxZombies());i++){
+  makeZombie(-rand(0,100),rand(18,Math.max(30,H-30)));
+ }
  hideBannerSoon(1600);
 }
 
-// The waves are endless. Only simultaneous living zombies are limited,
-// with a smaller cap on mobile to avoid freezing the browser.
-function maxZombies(){return mobile()?180:420;}
-function maxBullets(){return mobile()?100:220;}
+/* Lower mobile caps to avoid freezing weaker phones. */
+function maxZombies(){return mobile()?280:1000;}
+function maxBullets(){return mobile()?140:500;}
 
 function update(dt){
  if(!started){
@@ -269,17 +718,37 @@ function update(dt){
   }
   if(countdown<=0)startBattle();
  }
+
  const livingFlags=flags.filter(f=>f.alive);
  const livingZombies=zombies.filter(z=>z.alive);
  const b=getBounds();
 
- for(const f of livingFlags){
-  if(!started){
+ /* Give player-controlled flags the first chance to fire. */
+ const firingOrder=[...livingFlags].sort((a,b)=>{
+  const ap=mode==="play"&&!!playerControls[a.code];
+  const bp=mode==="play"&&!!playerControls[b.code];
+  return Number(bp)-Number(ap);
+ });
+
+ for(const f of firingOrder){
+  const control=(mode==="play"&&playerControls[f.code])?playerControls[f.code]:null;
+
+  if(started&&control){
+   if(control.x||control.y){
+    const l=Math.hypot(control.x,control.y)||1;
+    f.x+=control.x/l*180*dt;
+    f.y+=control.y/l*180*dt;
+   }
+   f.x=clamp(f.x,b.minX,b.maxX);
+   f.y=clamp(f.y,b.minY,b.maxY);
+  }else if(!started){
    const dx=f.tx-f.x,dy=f.ty-f.y,d=Math.hypot(dx,dy);
-   if(d>1){const s=Math.min(d,f.speed*dt);f.x+=dx/d*s;f.y+=dy/d*s;}
+   if(d>1){
+    const s=Math.min(d,f.speed*dt);
+    f.x+=dx/d*s;f.y+=dy/d*s;
+   }
   }else{
    let near=null,nd=Infinity;
-   // Each flag checks a subset of zombies on mobile to reduce CPU work.
    const stride=mobile()&&livingZombies.length>90?2:1;
    for(let i=(f.id%stride);i<livingZombies.length;i+=stride){
     const z=livingZombies[i],dx=z.x-f.x,dy=z.y-f.y,d2=dx*dx+dy*dy;
@@ -293,8 +762,8 @@ function update(dt){
      const side=Math.random()<.5?-1:1;
      f.dx=dx*.65-dy*side*.75+rand(-.2,.2);
      f.dy=dy*.65+dx*side*.75+rand(-.2,.2);
-     l=Math.hypot(f.dx,f.dy)||1;f.dx/=l;f.dy/=l;
-     f.dodge=rand(.3,.7);
+     l=Math.hypot(f.dx,f.dy)||1;
+     f.dx/=l;f.dy/=l;f.dodge=rand(.3,.7);
     }
     f.x+=f.dx*135*dt;f.y+=f.dy*135*dt;
    }else{
@@ -302,52 +771,76 @@ function update(dt){
     if(f.idle<=0){
      const dx=f.tx-f.x,dy=f.ty-f.y,l=Math.hypot(dx,dy)||1;
      f.ix=dx/l+rand(-.35,.35);f.iy=dy/l+rand(-.35,.35);
-     const n=Math.hypot(f.ix,f.iy)||1;f.ix/=n;f.iy/=n;
-     f.idle=rand(.5,1.1);
+     const n=Math.hypot(f.ix,f.iy)||1;
+     f.ix/=n;f.iy/=n;f.idle=rand(.5,1.1);
     }
     const home=Math.hypot(f.tx-f.x,f.ty-f.y);
     if(home>60){
      const dx=f.tx-f.x,dy=f.ty-f.y,l=Math.hypot(dx,dy)||1;
      f.x+=dx/l*42*dt;f.y+=dy/l*42*dt;
-    }else{f.x+=f.ix*12*dt;f.y+=f.iy*12*dt;}
+    }else{
+     f.x+=f.ix*12*dt;f.y+=f.iy*12*dt;
+    }
    }
-   f.x=clamp(f.x,b.minX,b.maxX);f.y=clamp(f.y,b.minY,b.maxY);
+   f.x=clamp(f.x,b.minX,b.maxX);
+   f.y=clamp(f.y,b.minY,b.maxY);
   }
 
-  f.fire-=dt;
-  if(started&&livingZombies.length&&f.fire<=0&&bullets.length<maxBullets()){
+  const isPlayer=mode==="play"&&!!playerControls[f.code];
+  if(!isPlayer)f.fire-=dt;
+
+  const wantsToShoot=isPlayer
+   ?!!playerControls[f.code].shoot
+   :f.fire<=0;
+
+  /* Keep room for human shots instead of letting AI fill the array. */
+  const reserve=mode==="play"?Math.max(24,Math.floor(maxBullets()*.18)):0;
+  const allowedBulletCount=isPlayer?maxBullets():Math.max(0,maxBullets()-reserve);
+
+  const shouldFire=isPlayer
+   ?wantsToShoot
+   :started&&wantsToShoot&&livingZombies.length>0;
+
+  if(shouldFire&&bullets.length<allowedBulletCount){
    let target=null,best=Infinity;
-   // Search zombies, but stop early if a very close target is found.
    for(const z of livingZombies){
     const dx=z.x-f.x,dy=z.y-f.y,d=dx*dx+dy*dy;
-    if(d<best){best=d;target=z;if(d<100)break;}
+    if(d<best){best=d;target=z;}
    }
-   if(target){
-    const sx=f.x+18,sy=f.y+13,dx=target.x+10-sx,dy=target.y+8-sy;
-    const l=Math.hypot(dx,dy)||1;
-    bullets.push({x:sx,y:sy,vx:dx/l*540,vy:dy/l*540,damage:rand(38,48),alive:true});
-   }
-   f.fire=rand(.26,.48);
+
+   const sx=f.x+18,sy=f.y+13;
+   let dx=target?target.x+10-sx:1;
+   let dy=target?target.y+8-sy:0;
+   const l=Math.hypot(dx,dy)||1;
+   dx/=l;dy/=l;
+
+   bullets.push({
+    x:sx,y:sy,vx:dx*540,vy:dy*540,
+    damage:isPlayer?45:rand(38,48),alive:true,player:isPlayer
+   });
+
    if(shotClock<=0){
-    tone(155,.065,.25,"sawtooth",58);
-    tone(880,.022,.09,"square",240);
-    shotClock=.11;
+    tone(155,.035,.12,"sawtooth",58);
+    tone(880,.018,.05,"square",240);
+    shotClock=.035;
    }
+   if(!isPlayer)f.fire=rand(.26,.48);
   }
  }
 
  if(started){
   shotClock=Math.max(0,shotClock-dt);
   spawnClock-=dt;
+
   if(spawnClock<=0){
-   const aliveCount=livingZombies.length;
+   const aliveCount=zombies.length;
    if(aliveCount<maxZombies()){
-    // More spawn pressure each wave, without flooding the device.
-    const amount=Math.min(1+Math.floor(wave/2),maxZombies()-aliveCount, mobile()?5:10);
-    for(let i=0;i<amount;i++)
-     makeZombie(-rand(0,35),rand(15,Math.max(28,H*.62-18)));
+    const amount=Math.min(1+Math.floor(wave/2),maxZombies()-aliveCount,mobile()?3:10);
+    for(let i=0;i<amount;i++){
+     makeZombie(-rand(0,35),rand(15,Math.max(28,H-28)));
+    }
    }
-   spawnClock=Math.max(mobile()?.12:.065,.38-Math.min(wave,30)*.009);
+   spawnClock=Math.max(mobile()?.2:.065,.38-Math.min(wave,30)*.009);
   }
 
   for(const z of zombies){
@@ -359,7 +852,8 @@ function update(dt){
    }
    if(target){
     const dx=target.x-z.x,dy=target.y-z.y,l=Math.hypot(dx,dy)||1;
-    z.x+=dx/l*z.speed*dt;z.y+=dy/l*z.speed*dt;
+    z.x+=dx/l*z.speed*dt;
+    z.y+=dy/l*z.speed*dt;
     if(Math.abs(z.x-target.x)<23&&Math.abs(z.y-target.y)<18){
      target.hp-=(95+Math.min(wave,30)*5)*dt;
      if(target.hp<=0){
@@ -370,41 +864,8 @@ function update(dt){
     }
    }
    z.x=clamp(z.x,-24,W-24);
-   z.y=clamp(z.y,12,H*.65-18);
+   z.y=clamp(z.y,12,H-22);
   }
-
-  // Swept bullet hitboxes prevent fast bullets passing through zombies.
-  for(const b of bullets){
-   if(!b.alive)continue;
-   const ox=b.x,oy=b.y;
-   b.x+=b.vx*dt;b.y+=b.vy*dt;
-   let hit=null;
-   for(const z of zombies){
-    if(!z.alive)continue;
-    // Segment-to-rectangle clipping.
-    const dx=b.x-ox,dy=b.y-oy;
-    let t0=0,t1=1,hitRect=true;
-    const ps=[-dx,dx,-dy,dy];
-    const qs=[ox-(z.x-4),(z.x+25)-ox,oy-(z.y-3),(z.y+20)-oy];
-    for(let k=0;k<4;k++){
-     if(Math.abs(ps[k])<1e-8){if(qs[k]<0){hitRect=false;break;}}
-     else{
-      const r=qs[k]/ps[k];
-      if(ps[k]<0){if(r>t1){hitRect=false;break;}if(r>t0)t0=r;}
-      else{if(r<t0){hitRect=false;break;}if(r<t1)t1=r;}
-     }
-    }
-    if(hitRect){hit=z;break;}
-   }
-   if(hit){
-    hit.hp-=b.damage;b.alive=false;
-    tone(310,.025,.035,"square",180);
-    if(hit.hp<=0)killZombie(hit);
-   }else if(b.x<-30||b.x>W+30||b.y<-30||b.y>H+30)b.alive=false;
-  }
-
-  bullets=bullets.filter(b=>b.alive);
-  zombies=zombies.filter(z=>z.alive);
 
   waveClock+=dt;
   if(waveClock>=10){
@@ -416,6 +877,51 @@ function update(dt){
   }
  }
 
+ /* Move bullets even during preparation. */
+ for(const bullet of bullets){
+  if(!bullet.alive)continue;
+  const ox=bullet.x,oy=bullet.y;
+  bullet.x+=bullet.vx*dt;
+  bullet.y+=bullet.vy*dt;
+  let hit=null;
+
+  for(const z of zombies){
+   if(!z.alive)continue;
+   const dx=bullet.x-ox,dy=bullet.y-oy;
+   let t0=0,t1=1,hitRect=true;
+   const ps=[-dx,dx,-dy,dy];
+   const qs=[ox-(z.x-4),(z.x+25)-ox,oy-(z.y-3),(z.y+20)-oy];
+
+   for(let k=0;k<4;k++){
+    if(Math.abs(ps[k])<1e-8){
+     if(qs[k]<0){hitRect=false;break;}
+    }else{
+     const r=qs[k]/ps[k];
+     if(ps[k]<0){
+      if(r>t1){hitRect=false;break;}
+      if(r>t0)t0=r;
+     }else{
+      if(r<t0){hitRect=false;break;}
+      if(r<t1)t1=r;
+     }
+    }
+   }
+   if(hitRect){hit=z;break;}
+  }
+
+  if(hit){
+   hit.hp-=bullet.damage;
+   bullet.alive=false;
+   tone(310,.025,.035,"square",180);
+   if(hit.hp<=0)killZombie(hit);
+  }else if(bullet.x<-30||bullet.x>W+30||bullet.y<-30||bullet.y>H+30){
+   bullet.alive=false;
+  }
+ }
+
+ bullets=bullets.filter(b=>b.alive);
+ zombies=zombies.filter(z=>z.alive);
+
  statsClock-=dt;
  if(statsClock<=0){
   statsClock=.25;
@@ -423,31 +929,36 @@ function update(dt){
    ?"Wave "+wave+" · 🧟 "+zombies.length+" active · ☠ "+defeated+" defeated · 🌍 "+livingFlags.length+" flags"
    :"🌍 "+livingFlags.length+" flags preparing · "+countdown+"s";
  }
+
  if(started&&livingFlags.length===0){
   banner("ZOMBIES WIN!","All flags have fallen");
-  $("notice").textContent="BATTLE OVER";running=false;gameOver=true;
+  $("notice").textContent="BATTLE OVER";
+  running=false;gameOver=true;
+ }
+
+ if(networkRole==="host"){
+  snapshotClock-=dt;
+  if(snapshotClock<=0){
+   snapshotClock=.10;
+   sendSnapshot();
+  }
  }
 }
 
 function draw(){
- // Background
- const sky=ctx.createLinearGradient(0,0,0,H);
- sky.addColorStop(0,"#142b3c");sky.addColorStop(.67,"#263e43");
- sky.addColorStop(.68,"#5a6241");sky.addColorStop(1,"#3e4d34");
- ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
- ctx.fillStyle="#a5a16d";ctx.fillRect(0,H*.68,W,3);
- ctx.globalAlpha=.14;ctx.strokeStyle="#d5dfb4";ctx.lineWidth=1;
- for(let x=-H;x<W;x+=42){ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(x+H*.5,H*.68);ctx.stroke();}
+ ctx.fillStyle="#263f35";
+ ctx.fillRect(0,0,W,H);
+
+ ctx.globalAlpha=.10;
+ ctx.strokeStyle="#c4e3ad";
+ ctx.lineWidth=1;
+ for(let x=-H;x<W;x+=42){
+  ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(x+H*.5,0);ctx.stroke();
+ }
  ctx.globalAlpha=1;
 
- // Bullets first, so they appear behind units.
- for(const b of bullets){
-  ctx.fillStyle="#ffe58a";ctx.shadowColor="#ffed8b";ctx.shadowBlur=5;
-  ctx.fillRect(b.x,b.y,8,3);
- }
- ctx.shadowBlur=0;
-
  const fw=mobile()?23:27,fh=mobile()?15:18;
+
  for(const f of flags){
   if(!f.alive)continue;
   const im=flagImages[f.code];
@@ -457,71 +968,285 @@ function draw(){
    ctx.fillStyle="#f5f5f5";ctx.fillRect(f.x,f.y,fw,fh);
    ctx.fillStyle="#e33";ctx.fillRect(f.x,f.y,fw,fh/3);
   }
-  // Tiny rifle
+
   ctx.fillStyle="#252c32";ctx.fillRect(f.x+fw*.56,f.y+fh*.72,12,3);
   ctx.fillStyle="#c6d1d7";ctx.fillRect(f.x+fw*.56+9,f.y+fh*.72,6,1.5);
+
+  if(mode==="play"&&playerControls[f.code]){
+   ctx.strokeStyle=f.code===localCountryCode?"#ffe36e":"#70eaff";
+   ctx.lineWidth=2;ctx.strokeRect(f.x-2,f.y-2,fw+4,fh+4);
+   ctx.fillStyle="#071019dd";
+   ctx.fillRect(f.x-2,f.y+fh+2,Math.max(30,f.name.length*5),10);
+   ctx.fillStyle="#ffffff";ctx.font="9px Arial";
+   ctx.fillText(f.code===localCountryCode?"YOU":(playerNames[f.code]||"PLAYER"),f.x,f.y+fh+10);
+  }
+
   if(f.hp<100){
    ctx.fillStyle="#62242a";ctx.fillRect(f.x,f.y-4,fw,2);
    ctx.fillStyle="#76ff68";ctx.fillRect(f.x,f.y-4,fw*clamp(f.hp/100,0,1),2);
   }
  }
+
  for(const z of zombies){
   ctx.fillStyle="#19c63f";ctx.fillRect(z.x,z.y,23,17);
   ctx.strokeStyle="#8aff8b";ctx.lineWidth=2;ctx.strokeRect(z.x,z.y,23,17);
   ctx.fillStyle="#62242a";ctx.fillRect(z.x,z.y-5,23,3);
   ctx.fillStyle="#76ff68";ctx.fillRect(z.x,z.y-5,23*clamp(z.hp/z.max,0,1),3);
  }
+
+ for(const b of bullets){
+  ctx.save();
+  ctx.fillStyle="#ffe58a";ctx.shadowColor="#ffed8b";ctx.shadowBlur=7;
+  ctx.fillRect(b.x,b.y,8,3);
+  ctx.restore();
+ }
 }
 
 function tick(now){
  if(!running)return;
+ if(networkRole==="client")updateLocalInput();
+
  if(paused){
   lastTime=now;draw();
-  window.gameFrame=requestAnimationFrame(tick);return;
+  window.gameFrame=requestAnimationFrame(tick);
+  return;
  }
+
  const dt=Math.min(.035,Math.max(0,(now-lastTime)/1000));
  lastTime=now;
- update(dt);draw();
+
+ if(networkRole!=="client")update(dt);
+ draw();
+
  if(running)window.gameFrame=requestAnimationFrame(tick);
 }
 
 $("pause").addEventListener("click",()=>{
+ if(networkRole==="client"){
+  setMenuStatus("The host controls pausing in a multiplayer room.");
+  return;
+ }
  if(gameOver)return;
+
  paused=!paused;
  $("pause").textContent=paused?"▶ Resume":"⏸ Pause";
+
  if(paused){
   $("notice").textContent="⏸ GAME PAUSED";
-  $("banner").style.display="block";banner("PAUSED","Press Resume to continue");
+  $("banner").style.display="block";
+  banner("PAUSED","Press Resume to continue");
  }else{
   $("notice").textContent=started?"⚔️ BATTLE IN PROGRESS":"🛡️ PREPARATION PHASE";
   $("banner").style.display=started?"none":"block";
   lastTime=performance.now();
  }
 });
-$("restart").addEventListener("click",()=>{setupAudio();reset();});
+
 $("sound").addEventListener("click",()=>{
  muted=!muted;
  $("sound").textContent=muted?"🔇 Sound OFF":"🔊 Sound ON";
  if(!muted){setupAudio();tone(500,.12,.12,"triangle",700);}
 });
+
 $("fullscreen").addEventListener("click",async()=>{
  setupAudio();
  try{
   if(!document.fullscreenElement)await document.documentElement.requestFullscreen();
   else await document.exitFullscreen();
- }catch(e){banner("FULLSCREEN UNAVAILABLE","Try your browser's fullscreen option");hideBannerSoon(1600);}
+ }catch(e){
+  banner("FULLSCREEN UNAVAILABLE","Try your browser's fullscreen option");
+  hideBannerSoon(1600);
+ }
 });
+
 document.addEventListener("visibilitychange",()=>{
  lastTime=performance.now();
  if(document.hidden&&running&&!paused){
-  paused=true;$("pause").textContent="▶ Resume";
+  paused=true;
+  $("pause").textContent="▶ Resume";
   $("notice").textContent="⏸ AUTO-PAUSED";
-  $("banner").style.display="block";banner("PAUSED","Tab hidden — resume when ready");
+  $("banner").style.display="block";
+  banner("PAUSED","Tab hidden — resume when ready");
+ }
+});
+
+fillCountryPicker();
+
+$("watchMode").addEventListener("click",beginWatch);
+$("playMode").addEventListener("click",()=>{
+ $("mainMenu").style.display="none";
+ $("playSetup").style.display="block";
+ setMenuStatus("Choose your country, then play solo, host, or join.");
+});
+$("backMenu").addEventListener("click",()=>{
+ $("mainMenu").style.display="flex";
+ $("playSetup").style.display="none";
+ setMenuStatus("Choose a mode to begin.");
+});
+$("soloAI").addEventListener("click",beginSoloAI);
+$("hostRoom").addEventListener("click",hostGame);
+$("joinRoom").addEventListener("click",joinGame);
+
+$("menuButton").addEventListener("click",()=>{
+ disconnectNetwork();
+ networkRole="offline";mode="watch";localCountryCode=null;
+ $("title").textContent="🌍 FLAGS vs ZOMBIES";
+ $("shootButton").style.display="none";
+ $("movePad").style.display="none";
+ showMenu();
+});
+
+function refreshKeys(){
+ localInput.x=(keyDown.has("d")?1:0)-(keyDown.has("a")?1:0);
+ localInput.y=(keyDown.has("s")?1:0)-(keyDown.has("w")?1:0);
+ const n=Math.hypot(localInput.x,localInput.y)||1;
+ localInput.x/=n;localInput.y/=n;
+ localInput.shoot=localShoot||keyDown.has(" ");
+ updateLocalInput();
+}
+
+window.addEventListener("keydown",e=>{
+ const k=e.key.length===1?e.key.toLowerCase():e.key;
+ if(["w","a","s","d"," "].includes(k)){
+  e.preventDefault();
+  keyDown.add(k);
+  if(k===" "){localShoot=true;setupAudio();}
+  refreshKeys();
+ }
+});
+
+window.addEventListener("keyup",e=>{
+ const k=e.key.length===1?e.key.toLowerCase():e.key;
+ keyDown.delete(k);
+ if(k===" ")localShoot=false;
+ refreshKeys();
+});
+
+window.addEventListener("blur",()=>{
+ keyDown.clear();
+ localInput.x=0;localInput.y=0;localShoot=false;
+ $("shootButton").classList.remove("shooting");
+ updateLocalInput();
+});
+
+const joy=$("movePad"),knob=$("joyKnob");
+let joyPointer=null;
+
+function moveJoy(ev){
+ const r=joy.getBoundingClientRect();
+ const cx=r.left+r.width/2,cy=r.top+r.height/2;
+ const dx=ev.clientX-cx,dy=ev.clientY-cy;
+ const limit=r.width*.34,l=Math.hypot(dx,dy)||1,k=Math.min(1,limit/l);
+ knob.style.left=`${50+dx*k/r.width*100}%`;
+ knob.style.top=`${50+dy*k/r.height*100}%`;
+ localInput.x=clamp(dx/limit,-1,1);
+ localInput.y=clamp(dy/limit,-1,1);
+ const n=Math.hypot(localInput.x,localInput.y)||1;
+ if(n>1){localInput.x/=n;localInput.y/=n;}
+ updateLocalInput();
+}
+
+function resetJoy(){
+ joyPointer=null;
+ knob.style.left="50%";knob.style.top="50%";
+ localInput.x=0;localInput.y=0;
+ updateLocalInput();
+}
+
+joy.addEventListener("pointerdown",ev=>{
+ ev.preventDefault();
+ joyPointer=ev.pointerId;
+ try{joy.setPointerCapture(ev.pointerId);}catch(e){}
+ moveJoy(ev);
+});
+joy.addEventListener("pointermove",ev=>{
+ if(ev.pointerId===joyPointer){ev.preventDefault();moveJoy(ev);}
+});
+joy.addEventListener("pointerup",ev=>{
+ if(ev.pointerId===joyPointer){ev.preventDefault();resetJoy();}
+});
+joy.addEventListener("pointercancel",ev=>{
+ if(ev.pointerId===joyPointer)resetJoy();
+});
+joy.addEventListener("lostpointercapture",()=>{
+ if(joyPointer!==null)resetJoy();
+});
+
+function setShoot(on){
+ localShoot=on;
+ localInput.shoot=on||keyDown.has(" ");
+ $("shootButton").classList.toggle("shooting",on);
+ updateLocalInput();
+}
+
+/* Tapping or holding the arena also fires. */
+canvas.addEventListener("pointerdown",ev=>{
+ if(mode!=="play")return;
+ if(ev.pointerType==="mouse"&&ev.button!==0)return;
+ ev.preventDefault();
+ setupAudio();
+ setShoot(true);
+ shootPointer=ev.pointerId;
+ try{canvas.setPointerCapture(ev.pointerId);}catch(e){}
+});
+canvas.addEventListener("pointerup",ev=>{
+ if(shootPointer===ev.pointerId){
+  shootPointer=null;
+  setShoot(false);
+ }
+});
+canvas.addEventListener("pointercancel",()=>{
+ shootPointer=null;
+ setShoot(false);
+});
+window.addEventListener("pointerup",()=>{
+ if(shootPointer!==null){
+  shootPointer=null;
+  setShoot(false);
+ }
+});
+canvas.addEventListener("contextmenu",ev=>ev.preventDefault());
+
+const shootButton=$("shootButton");
+shootButton.addEventListener("pointerdown",ev=>{
+ if(mode!=="play")return;
+ ev.preventDefault();
+ ev.stopPropagation();
+ setupAudio();
+ shootPointer=ev.pointerId;
+ try{shootButton.setPointerCapture(ev.pointerId);}catch(e){}
+ setShoot(true);
+});
+shootButton.addEventListener("pointerup",ev=>{
+ ev.preventDefault();
+ shootPointer=null;
+ setShoot(false);
+});
+shootButton.addEventListener("pointercancel",()=>{
+ shootPointer=null;
+ setShoot(false);
+});
+shootButton.addEventListener("lostpointercapture",()=>{
+ if(localShoot){shootPointer=null;setShoot(false);}
+});
+
+$("restart").addEventListener("click",()=>{
+ if(networkRole==="client"){
+  setMenuStatus("Only the host can restart the shared battle.");
+  return;
+ }
+ if(networkRole==="host"){
+  reset();
+  playerControls[localCountryCode]={x:0,y:0,shoot:false};
+  sendToPlayers({type:"notice",text:"Host restarted the battle."});
+ }else{
+  setupAudio();
+  reset();
  }
 });
 
 resize();
-reset();
+showMenu();
 </script>
 </body>
 </html>
